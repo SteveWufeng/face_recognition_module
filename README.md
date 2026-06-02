@@ -1,6 +1,8 @@
 # face_recognition
 
-Python package for face detection, recognition, and enrollment built on [InsightFace](https://github.com/deepinsight/insightface).
+A convenience wrapper around [InsightFace](https://github.com/deepinsight/insightface) that bundles detection, recognition, and enrollment into a single importable module with a camera-ready CLI.
+
+InsightFace is the engine (model loading, ONNX inference, face alignment). This module is an opinionated toolkit that adds identity gallery management, unknown-face rejection, persistence, and labeled image export — the ~200 lines of boilerplate that users typically rewrite per project.
 
 Requires the `buffalo_l` model pack (auto-downloaded on first use by InsightFace).
 
