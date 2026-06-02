@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "face_recognition"
+version = "0.1.0"
+description = "Face detection, recognition, and enrollment based on InsightFace"
+requires-python = ">=3.10"
+dependencies = [
+    "insightface>=1.0.1",
+    "opencv-python-headless>=4.8",
+    "numpy>=1.24",
+]
+
+[project.scripts]
+face-recognition = "face_recognition.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["face_recognition*"]
