@@ -8,52 +8,51 @@ Requires the `buffalo_l` model pack (auto-downloaded on first use by InsightFace
 
 ## Installation
 
-### Option A — pip install (recommended)
+### Option A — pip from GitHub (recommended)
+
+```bash
+pip install git+https://github.com/SteveWufeng/face_recognition_module.git
+```
+
+### Option B — pip from local path
 
 ```bash
 pip install /path/to/face_recognition
 ```
 
-This installs `face_recognition` into the active Python environment. After this, `import face_recognition` works from anywhere, and `face-recognition` is available as a shell command.
-
-### Option B — editable (develop) mode
+### Option C — editable (develop) mode
 
 ```bash
 pip install -e /path/to/face_recognition
 ```
 
-Lets you edit the source files and see changes immediately without reinstalling.
+Lets you edit source and see changes immediately without reinstalling.
 
-### Option C — copy into your project
+### Option D — copy into your project
 
 ```bash
 cp -r /path/to/face_recognition/face_recognition/ your_project/
 ```
 
-Then import as usual: `from face_recognition import Detector`.
+Then `from face_recognition import Detector` works directly.
 
-### Option D — PYTHONPATH
+### Option E — PYTHONPATH
 
 ```bash
 export PYTHONPATH="/path/to/face_recognition:$PYTHONPATH"
 ```
 
-No install, no copy — just point Python at the directory.
-
-### Option E — pixi (if your project uses pixi)
+### Option F — pixi
 
 ```bash
 pixi run python -m pip install /path/to/face_recognition
 ```
 
-Or add it as a local dependency in `pixi.toml`:
+Or add to `pixi.toml`:
 
 ```toml
-[tasks]
-cmd = "python -m face_recognition search-cam"
-
 [dependencies]
-face-recognition = { path = "/path/to/face_recognition" }
+face-recognition = { git = "https://github.com/SteveWufeng/face_recognition_module.git" }
 ```
 
 ---
