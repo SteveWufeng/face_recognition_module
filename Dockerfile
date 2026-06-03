@@ -20,20 +20,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libxrender-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# RealSense SDK — provides the UVC backend so OpenCV can read RGB from RealSense cameras
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    curl \
-    gnupg \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -fsSL https://librealsense.intel.com/Debian/librealsense.pgp | gpg --dearmor -o /usr/share/keyrings/librealsense-archive.gpg \
-    && echo "deb [signed-by=/usr/share/keyrings/librealsense-archive.gpg] https://librealsense.intel.com/Debian/apt-repo bookworm main" \
-        > /etc/apt/sources.list.d/librealsense.list \
-    && apt-get update \
-    && apt-get install -y --no-install-recommends \
-        librealsense2-udev-rules \
-        librealsense2-gl \
-        librealsense2 \
-    && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
 COPY --from=builder /usr/local/bin/face-recognition /usr/local/bin/face-recognition
