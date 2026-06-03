@@ -1,0 +1,18 @@
+services:
+  face-recognition:
+    build: .
+    image: face-recognition:latest
+    container_name: face-recognition
+    entrypoint: ["face-recognition"]
+    volumes:
+      - model_cache:/root/.insightface
+      - gallery_data:/root/.face_recognition
+      - ./workspace:/workspace
+    devices:
+      - /dev/video0:/dev/video0
+    stdin_open: true
+    tty: true
+
+volumes:
+  model_cache:
+  gallery_data:
