@@ -226,23 +226,28 @@ def cmd_search_cam(args):
 
 def cmd_export(args):
     detector = Detector()
+    enroller = _load_enroller(args.gallery, args.threshold, args.model)
     img = cv2.imread(args.image)
     if img is None:
         print(f"Cannot read {args.image}", file=sys.stderr)
         sys.exit(1)
     dets = detector.detect(img)
+    results = enroller.search(img) if dets else []
     viz = Visualizer()
-    labeled = viz.draw_detections(
-        img, dets,
-        labels=[f"face_{i}" for i in range(len(dets))],
-    )
+    identities = [r.identity for r in results]
+    confidences = [r.confidence for r in results]
+    labeled = viz.draw_search_results(img, dets, identities, confidences)
     cv2.imwrite(args.out, labeled)
     print(f"[export] {args.out}  ({len(dets)} face(s) labeled)")
+    for r in results:
+        flag = "" if r.identity == "unknown" else " ✓"
+        print(f"  {r.identity:<20} {r.confidence:.4f}{flag}")
 
 
 def cmd_export_cam(args):
     cap = _open_cam(args.camera)
     detector = Detector()
+    enroller = _load_enroller(args.gallery, args.threshold, args.model)
     viz = Visualizer()
 
     if not _has_display():
@@ -252,13 +257,16 @@ def cmd_export_cam(args):
             print("[error] Failed to grab frame", file=sys.stderr)
             sys.exit(1)
         dets = detector.detect(frame)
-        labeled = viz.draw_detections(
-            frame, dets,
-            labels=[f"face_{i}" for i in range(len(dets))],
-        )
+        results = enroller.search(frame) if dets else []
+        identities = [r.identity for r in results]
+        confidences = [r.confidence for r in results]
+        labeled = viz.draw_search_results(frame, dets, identities, confidences)
         out = Path(args.out)
         cv2.imwrite(str(out), labeled)
         print(f"[export] {out}  ({len(dets)} face(s))")
+        for r in results:
+            flag = "" if r.identity == "unknown" else " ✓"
+            print(f"  {r.identity:<20} {r.confidence:.4f}{flag}")
         return
 
     print(f"[camera] Press SPACE to capture, ESC to cancel")
@@ -267,10 +275,10 @@ def cmd_export_cam(args):
         if not ret:
             break
         dets = detector.detect(frame)
-        labeled = viz.draw_detections(
-            frame, dets,
-            labels=[f"face_{i}" for i in range(len(dets))],
-        )
+        results = enroller.search(frame) if dets else []
+        identities = [r.identity for r in results]
+        confidences = [r.confidence for r in results]
+        labeled = viz.draw_search_results(frame, dets, identities, confidences)
         cv2.putText(labeled, "[SPACE] capture  [ESC] cancel",
                     (10, 30), cv2.FONT_HERSHEY_DUPLEX, 0.6, (0, 255, 0), 1)
         cv2.imshow("Face Recognition - Export Camera", labeled)
@@ -279,6 +287,9 @@ def cmd_export_cam(args):
             out = Path(args.out)
             cv2.imwrite(str(out), labeled)
             print(f"[export] {out}  ({len(dets)} face(s))")
+            for r in results:
+                flag = "" if r.identity == "unknown" else " ✓"
+                print(f"  {r.identity:<20} {r.confidence:.4f}{flag}")
             break
         elif key == 27:
             print("[cancel]")
