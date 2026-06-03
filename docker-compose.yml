@@ -3,8 +3,11 @@ services:
     build: .
     image: face-recognition:latest
     container_name: face-recognition
-    entrypoint: ["face-recognition"]
+    entrypoint: ["python", "-u", "-m", "face_recognition"]
+    environment:
+      - PYTHONPATH=/app
     volumes:
+      - .:/app
       - model_cache:/root/.insightface
       - gallery_data:/root/.face_recognition
       - ./workspace:/workspace
