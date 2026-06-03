@@ -67,9 +67,14 @@ def cmd_enroll_path(args):
 
 
 def _open_cam(device: int) -> cv2.VideoCapture:
-    cap = cv2.VideoCapture(device)
+    import os
+    dev = f"/dev/video{device}"
+    if not os.path.exists(dev):
+        print(f"{dev} not found", file=sys.stderr)
+        sys.exit(1)
+    cap = cv2.VideoCapture(device, apiPreference=cv2.CAP_V4L2)
     if not cap.isOpened():
-        print(f"Cannot open camera /dev/video{device}", file=sys.stderr)
+        print(f"Failed to open {dev}", file=sys.stderr)
         sys.exit(1)
     return cap
 
