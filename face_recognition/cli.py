@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """face_recognition — face enrollment & recognition CLI.
 
+Camera commands (enroll-cam, search-cam, export-cam) discard the first 10
+frames on open to let auto-exposure / white-balance settle before capture.
+
+The Python API (Detector, Recognizer, Enroller) operates on numpy arrays
+(cv2 images) — pass frames from any source.  There is no hidden camera
+state; you manage capture externally.
+
 Usage:
   face_recognition enroll-path <identity> <image>         Enroll face from image
   face_recognition enroll-cam <identity>                  Enroll face from camera

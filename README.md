@@ -87,6 +87,9 @@ face_recognition/
 
 ## Python API
 
+All API classes operate on **numpy arrays** (OpenCV `cv2.imread` / camera frames).
+There is no hidden camera state — pass images from any source.
+
 ### Detector
 
 ```python
@@ -95,7 +98,7 @@ import cv2
 
 detector = Detector()
 
-# From numpy array
+# From numpy array (file, camera frame, video stream, …)
 img = cv2.imread("photo.jpg")
 dets = detector.detect(img)                # -> list[Detection]
 
@@ -204,6 +207,9 @@ docker compose run --rm face-recognition --camera 1 enroll-cam "Bob"
 
 The camera device index defaults to `0`. Use `--camera N` to select another device.
 All `/dev/video0`–`/dev/video9` from the host are forwarded to the container.
+
+Camera commands discard the first 10 frames on open to let auto-exposure and
+white balance settle, preventing green/frozen first-capture issues.
 
 ### Without Docker
 
