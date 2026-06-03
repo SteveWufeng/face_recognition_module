@@ -80,6 +80,8 @@ def _open_cam(device: int) -> cv2.VideoCapture:
     if not cap.isOpened():
         print(f"Failed to open {dev}", file=sys.stderr)
         sys.exit(1)
+    for _ in range(10):
+        cap.read()
     return cap
 
 
