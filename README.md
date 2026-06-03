@@ -87,8 +87,30 @@ face_recognition/
 
 ## Python API
 
-All API classes operate on **numpy arrays** (OpenCV `cv2.imread` / camera frames).
-There is no hidden camera state — pass images from any source.
+All API classes operate on **numpy arrays** (OpenCV images). You manage the
+camera yourself — there is no hidden camera state inside the library.
+
+```python
+import cv2
+from face_recognition import Detector, Enroller
+
+# Open your camera externally (any index, any backend)
+cap = cv2.VideoCapture(0)
+ret, frame = cap.read()
+
+detector = Detector()
+enroller = Enroller()
+
+# Detect faces, then search against the gallery
+faces = detector.detect(frame)
+results = enroller.search(frame)
+
+for r in results:
+    print(r.identity, r.confidence)   # "Alice" / "unknown", 0.0–1.0
+```
+
+The same pattern works with images, video files, network streams — any
+`numpy.ndarray` with shape `(H, W, 3)` in BGR order.
 
 ### Detector
 
