@@ -57,6 +57,15 @@ Or add to `pixi.toml`:
 face-recognition = { git = "https://github.com/SteveWufeng/face_recognition_module.git" }
 ```
 
+### Option G — Docker
+
+```bash
+docker compose build
+```
+
+Models and gallery persist locally in `.insightface/` and `.face_recognition/`.
+No rebuild needed for code changes — the project root is bind-mounted live.
+
 ---
 
 ## Package structure
@@ -173,7 +182,30 @@ cv2.imwrite("output.jpg", labeled)
 
 ## CLI
 
-Run via `python -m face_recognition`.
+Run via `python -m face_recognition`, or via `face-recognition` when installed with pip.
+
+### With Docker
+
+```bash
+# All CLI commands work identically inside Docker:
+docker compose run --rm face-recognition list
+docker compose run --rm face-recognition enroll-path "Alice" /workspace/alice.jpg
+docker compose run --rm face-recognition search /workspace/group.jpg --out /workspace/result.jpg
+```
+
+Place images you want the container to access in `./workspace/` (bind-mounted to `/workspace`).
+
+Camera commands (auto-captures in headless mode, no display needed):
+
+```bash
+docker compose run --rm face-recognition --camera 2 export-cam /workspace/snapshot.jpg
+docker compose run --rm face-recognition --camera 1 enroll-cam "Bob"
+```
+
+The camera device index defaults to `0`. Use `--camera N` to select another device.
+All `/dev/video0`–`/dev/video9` from the host are forwarded to the container.
+
+### Without Docker
 
 Enroll a face from an image:
 
@@ -181,11 +213,13 @@ Enroll a face from an image:
 python -m face_recognition enroll-path "Alice" alice.jpg
 ```
 
-Enroll from camera (SPACE to capture, ESC to cancel):
+Enroll from camera (interactive — SPACE to capture, ESC to cancel):
 
 ```bash
 python -m face_recognition enroll-cam "Bob"
 ```
+
+In headless environments the frame is captured automatically without UI.
 
 Search faces in an image — green labels for known, red for unknown:
 
@@ -199,6 +233,8 @@ Live camera recognition (ESC to quit):
 python -m face_recognition search-cam
 ```
 
+In headless environments a single frame is captured, searched, and results printed.
+
 Export an image with detection boxes/landmarks only:
 
 ```bash
@@ -210,6 +246,8 @@ Capture camera frame with detections:
 ```bash
 python -m face_recognition export-cam snapshot.jpg
 ```
+
+In headless environments the first frame is captured and saved immediately.
 
 List, remove, clear gallery:
 
@@ -228,6 +266,7 @@ Place these **before** the subcommand:
 | `--threshold F` | `0.36` | Cosine similarity threshold |
 | `--model NAME` | `buffalo_l` | InsightFace model pack |
 | `--gallery PATH` | `~/.face_recognition/gallery.pkl` | Gallery file |
+| `--camera N` | `0` | Camera device index |
 
 ---
 
