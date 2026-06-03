@@ -8,8 +8,8 @@ services:
       - PYTHONPATH=/app
     volumes:
       - .:/app
-      - model_cache:/root/.insightface
-      - gallery_data:/root/.face_recognition
+      - ./.insightface:/root/.insightface
+      - ./.face_recognition:/root/.face_recognition
       - ./workspace:/workspace
     devices:
       - /dev/video0
@@ -25,6 +25,4 @@ services:
     stdin_open: true
     tty: true
 
-volumes:
-  model_cache:
-  gallery_data:
+
