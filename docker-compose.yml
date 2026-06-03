@@ -6,6 +6,7 @@ services:
     entrypoint: ["python", "-u", "-m", "face_recognition"]
     environment:
       - PYTHONPATH=/app
+      - QT_QPA_PLATFORM=offscreen
     volumes:
       - .:/app
       - ./.insightface:/root/.insightface
@@ -22,7 +23,3 @@ services:
       - /dev/video7
       - /dev/video8
       - /dev/video9
-    stdin_open: true
-    tty: true
-
-

@@ -21,6 +21,7 @@ Options:
 from __future__ import annotations
 
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -34,6 +35,10 @@ from face_recognition.visualizer import Visualizer
 
 _GALLERY_DIR = Path.home() / ".face_recognition"
 _GALLERY_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _has_display() -> bool:
+    return "DISPLAY" in os.environ or "WAYLAND_DISPLAY" in os.environ
 
 
 def _get_gallery_path(path: str | None) -> Path:
@@ -67,7 +72,6 @@ def cmd_enroll_path(args):
 
 
 def _open_cam(device: int) -> cv2.VideoCapture:
-    import os
     dev = f"/dev/video{device}"
     if not os.path.exists(dev):
         print(f"{dev} not found", file=sys.stderr)
@@ -80,10 +84,26 @@ def _open_cam(device: int) -> cv2.VideoCapture:
 
 
 def cmd_enroll_cam(args):
-    print(f"[camera] Press SPACE to capture, ESC to cancel")
     cap = _open_cam(args.camera)
     enroller = _load_enroller(args.gallery, args.threshold, args.model)
     detector = Detector()
+
+    if not _has_display():
+        ret, frame = cap.read()
+        cap.release()
+        if not ret:
+            print("[error] Failed to grab frame", file=sys.stderr)
+            sys.exit(1)
+        dets = detector.detect(frame, max_num=1)
+        if not dets:
+            print("[fail] No face detected")
+            sys.exit(1)
+        fd = enroller.enroll(args.identity, frame, metadata={"source": "camera"})
+        enroller.save(str(args.gallery))
+        print(f"[enrolled] {args.identity}  (age:{fd.age}, gender:{fd.gender})")
+        return
+
+    print(f"[camera] Press SPACE to capture, ESC to cancel")
     while True:
         ret, frame = cap.read()
         if not ret:
@@ -135,10 +155,11 @@ def cmd_search(args):
         flag = "" if r.identity == "unknown" else " ✓"
         print(f"  {r.identity:<20} {r.confidence:.4f}{flag}")
 
-    cv2.imshow("Face Recognition - Search", labeled)
-    print("[info] Press any key to close")
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    if _has_display():
+        cv2.imshow("Face Recognition - Search", labeled)
+        print("[info] Press any key to close")
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 
 def cmd_search_cam(args):
@@ -148,6 +169,33 @@ def cmd_search_cam(args):
     detector = Detector()
     viz = Visualizer()
     cap = _open_cam(args.camera)
+
+    if not _has_display():
+        ret, frame = cap.read()
+        cap.release()
+        if not ret:
+            print("[error] Failed to grab frame", file=sys.stderr)
+            sys.exit(1)
+        dets = detector.detect(frame)
+        if not dets:
+            print("[result] No faces detected")
+            return
+        results = enroller.search(frame)
+        print(f"{'Identity':<20} {'Confidence':<12}")
+        print(f"{'─'*32}")
+        for r in results:
+            flag = "" if r.identity == "unknown" else " ✓"
+            print(f"  {r.identity:<20} {r.confidence:<12.4f}{flag}")
+        if args.out:
+            identities = [r.identity for r in results]
+            confidences = [r.confidence for r in results]
+            labeled = viz.draw_search_results(frame, dets, identities, confidences)
+            out_path = Path(args.out) / "capture.jpg"
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            cv2.imwrite(str(out_path), labeled)
+            print(f"[export] {out_path}")
+        return
+
     print("[camera] Press ESC to quit")
     frame_idx = 0
     out_dir = Path(args.out) if args.out else None
@@ -193,10 +241,27 @@ def cmd_export(args):
 
 
 def cmd_export_cam(args):
-    print(f"[camera] Press SPACE to capture, ESC to cancel")
     cap = _open_cam(args.camera)
     detector = Detector()
     viz = Visualizer()
+
+    if not _has_display():
+        ret, frame = cap.read()
+        cap.release()
+        if not ret:
+            print("[error] Failed to grab frame", file=sys.stderr)
+            sys.exit(1)
+        dets = detector.detect(frame)
+        labeled = viz.draw_detections(
+            frame, dets,
+            labels=[f"face_{i}" for i in range(len(dets))],
+        )
+        out = Path(args.out)
+        cv2.imwrite(str(out), labeled)
+        print(f"[export] {out}  ({len(dets)} face(s))")
+        return
+
+    print(f"[camera] Press SPACE to capture, ESC to cancel")
     while True:
         ret, frame = cap.read()
         if not ret:
