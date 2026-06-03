@@ -16,6 +16,7 @@ Options:
   --threshold F     Similarity threshold (default: 0.36)
   --model NAME      Model pack name (default: buffalo_l)
   --gallery FILE    Gallery file path (default: ~/.face_recognition/gallery.pkl)
+  --camera N        Camera device index (default: 0)
 """
 from __future__ import annotations
 
@@ -65,12 +66,17 @@ def cmd_enroll_path(args):
     print(f"[enrolled] {args.identity}  (age:{fd.age}, gender:{fd.gender})")
 
 
+def _open_cam(device: int) -> cv2.VideoCapture:
+    cap = cv2.VideoCapture(device)
+    if not cap.isOpened():
+        print(f"Cannot open camera /dev/video{device}", file=sys.stderr)
+        sys.exit(1)
+    return cap
+
+
 def cmd_enroll_cam(args):
     print(f"[camera] Press SPACE to capture, ESC to cancel")
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Cannot open camera", file=sys.stderr)
-        sys.exit(1)
+    cap = _open_cam(args.camera)
     enroller = _load_enroller(args.gallery, args.threshold, args.model)
     detector = Detector()
     while True:
@@ -136,10 +142,7 @@ def cmd_search_cam(args):
         print("[warn] Gallery is empty — enroll someone first", file=sys.stderr)
     detector = Detector()
     viz = Visualizer()
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Cannot open camera", file=sys.stderr)
-        sys.exit(1)
+    cap = _open_cam(args.camera)
     print("[camera] Press ESC to quit")
     frame_idx = 0
     out_dir = Path(args.out) if args.out else None
@@ -186,10 +189,7 @@ def cmd_export(args):
 
 def cmd_export_cam(args):
     print(f"[camera] Press SPACE to capture, ESC to cancel")
-    cap = cv2.VideoCapture(0)
-    if not cap.isOpened():
-        print("Cannot open camera", file=sys.stderr)
-        sys.exit(1)
+    cap = _open_cam(args.camera)
     detector = Detector()
     viz = Visualizer()
     while True:
@@ -248,6 +248,7 @@ def main():
     parser.add_argument("--threshold", type=float, default=0.36, help="similarity threshold")
     parser.add_argument("--model", default="buffalo_l", help="model pack name")
     parser.add_argument("--gallery", default=None, help="gallery pickle path")
+    parser.add_argument("--camera", type=int, default=0, help="camera device index")
 
     sub = parser.add_subparsers(dest="command")
     sub.required = True

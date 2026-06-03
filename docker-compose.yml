@@ -9,7 +9,7 @@ services:
       - gallery_data:/root/.face_recognition
       - ./workspace:/workspace
     devices:
-      - /dev/video0:/dev/video0
+      - ${CAMERA_DEVICE:-/dev/video0}:/dev/video0
     stdin_open: true
     tty: true
 
