@@ -2,24 +2,14 @@ services:
   face-recognition:
     build: .
     image: face-recognition:latest
-    container_name: face-recognition
-    entrypoint: ["python", "-u", "-m", "face_recognition"]
+    container_name: face-recognition-1
+    network_mode: host
     environment:
       - PYTHONPATH=/app
+      - RMW_IMPLEMENTATION=rmw_zenoh_cpp
       - QT_QPA_PLATFORM=offscreen
     volumes:
       - .:/app
       - ./.insightface:/root/.insightface
       - ./.face_recognition:/root/.face_recognition
-      - ./workspace:/workspace
-    devices:
-      - /dev/video0
-      - /dev/video1
-      - /dev/video2
-      - /dev/video3
-      - /dev/video4
-      - /dev/video5
-      - /dev/video6
-      - /dev/video7
-      - /dev/video8
-      - /dev/video9
+    restart: unless-stopped

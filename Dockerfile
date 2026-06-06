@@ -1,31 +1,26 @@
-FROM python:3.11-slim AS builder
+FROM ros:jazzy-ros-base
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/* \
-    && pip install --no-cache-dir --upgrade pip setuptools wheel
-
-WORKDIR /app
-COPY pyproject.toml .
-COPY face_recognition/ face_recognition/
-RUN pip install --no-cache-dir .
-
-FROM python:3.11-slim
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-pip \
     libgl1 \
     libglib2.0-0 \
     libsm6 \
     libxext6 \
     libxrender-dev \
+    ros-jazzy-rmw-zenoh-cpp \
     && rm -rf /var/lib/apt/lists/*
 
+RUN pip3 install --break-system-packages --ignore-installed --no-cache-dir \
+    insightface>=1.0.1 \
+    opencv-python-headless>=4.8 \
+    numpy>=1.24
 
-COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
-COPY --from=builder /usr/local/bin/face-recognition /usr/local/bin/face-recognition
-COPY --from=builder /app/face_recognition /app/face_recognition
+WORKDIR /app
+COPY face_recognition/ face_recognition/
+COPY pyproject.toml .
+COPY entrypoint.sh .
+RUN chmod +x entrypoint.sh
 
-WORKDIR /workspace
+ENV PYTHONPATH=/app
 
-ENTRYPOINT ["face-recognition"]
-CMD ["--help"]
+ENTRYPOINT ["/app/entrypoint.sh"]

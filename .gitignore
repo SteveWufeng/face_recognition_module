@@ -10,3 +10,5 @@ venv/
 .venv/
 *.pkl
 .gallery.*
+.insightface/
+.face_recognition/
