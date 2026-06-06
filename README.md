@@ -351,7 +351,24 @@ cd /path/to/face_recognition
 pixi run python test_demo.py
 ```
 
-Tests detection, enrollment, search (known vs unknown), and pairwise comparison using the InsightFace test images.
+Expected output (Tom Hanks enrolled, faces in `t1.jpg` searched):
+
+```
+[Enroll] Tom Hanks — age:65 gender:M
+[Detect] t1.jpg — 4 face(s) found
+[Enroll] Alice — age:31
+───────────────────────────────────────────────────────
+Identity         Confidence   Age    Gender
+───────────────────────────────────────────────────────
+Tom Hanks        0.4246       ?      ?   ✓
+Alice            0.4619       ?      ?   ✓
+unknown          0.0559       ?      ?
+unknown          -0.0016      ?      ?
+─ Known faces in gallery: ['Tom Hanks', 'Alice']
+─ Search returned 4 result(s)
+─ Recognized: 2  Unknown: 2
+[Compare] face-0 vs face-1 similarity: 0.2542
+```
 
 ### ROS2 integration test
 
@@ -364,6 +381,48 @@ python test_ros_node.py search [--wait 5]
 # Enroll mode — enroll a person from test_image.jpg, then observe result
 python test_ros_node.py enroll "Alice" [--wait 5]
 ```
+
+Expected output — search (empty gallery):
+
+```
+[INFO] Publishing /app/test_image.jpg (1350x827)...
+[INFO] Done (result=received)
+
+[result] 4 face(s) detected:
+  Identity             Confidence   Det Score
+  ──────────────────────────────────────────
+  unknown              -1.0000      0.8311
+  unknown              -1.0000      0.8280
+  unknown              -1.0000      0.7820
+  unknown              -1.0000      0.6270
+```
+
+Expected output — enroll:
+
+```
+[INFO] Requesting enroll for "Alice"...
+[INFO] Publishing /app/test_image.jpg (1350x827)...
+[INFO] Done (result=received)
+
+[enroll] "Alice" — age:None, gender:? ✓
+```
+
+Expected output — search after enroll:
+
+```
+[INFO] Publishing /app/test_image.jpg (1350x827)...
+[INFO] Done (result=received)
+
+[result] 4 face(s) detected:
+  Identity             Confidence   Det Score
+  ──────────────────────────────────────────
+  unknown              -0.0257      0.8311
+  Alice                1.0000       0.8280     ✓
+  unknown              -0.0294      0.7820
+  unknown              0.0615       0.6270
+```
+
+Confidence of `-1.0` means no match found (empty gallery or below threshold). Known faces show `✓` and confidence `≥ similarity_threshold` (default `0.36`).
 
 In Docker:
 
