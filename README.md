@@ -74,6 +74,7 @@ No rebuild needed for code changes — the project root is bind-mounted live.
 face_recognition/
 ├── __init__.py        # Public API: Detector, Recognizer, Enroller, Visualizer, types
 ├── __main__.py        # python -m face_recognition entry point
+├── ros_node.py        # ROS2 node — camera subscriber, face recognition publisher
 ├── types.py           # Detection, FaceData, SearchResult, Detections dataclasses
 ├── models.py          # ModelManager singleton (lazy-loads ONNX models once)
 ├── detector.py        # Detector — detect faces in images
@@ -298,7 +299,52 @@ Place these **before** the subcommand:
 
 ---
 
+## ROS2 Integration
+
+The `ros_node.py` module provides a ROS2 node that subscribes to camera frames and publishes face recognition results. Designed to run as part of the [NeuroCube](https://github.com/SteveWufeng/NeuroCube) robot system using `rmw_zenoh_cpp`.
+
+### Topics
+
+| Direction | Topic | Type | Description |
+|---|---|---|---|
+| Input | `/camera0/color/image_raw` | `sensor_msgs/Image` | RGB camera frame |
+| Output | `/cube/face_recognition/results` | `std_msgs/String` | JSON with detected faces, identities, confidence scores |
+| Output | `/cube/face_recognition/frame` | `sensor_msgs/CompressedImage` | Annotated frame with bounding boxes and labels |
+| Input | `/cube/face_recognition/enroll` | `std_msgs/String` | Enroll request — `{"name": "Alice"}` or plain `"Alice"` |
+| Output | `/cube/face_recognition/enroll_result` | `std_msgs/String` | Enroll result — success/failure, age, gender |
+
+### Enroll flow
+
+Publish a name to `/cube/face_recognition/enroll`, then the **next detected face** in a camera frame is enrolled and saved to the gallery:
+
+```bash
+# Request enroll for "Alice"
+ros2 topic pub /cube/face_recognition/enroll std_msgs/String 'data: "Alice"' --once
+# Next frame with a face → enrolled, result on /cube/face_recognition/enroll_result
+```
+
+### Run with Docker
+
+```bash
+# Requires a running Zenoh router (rmw_zenoh_cpp)
+docker compose up -d
+```
+
+The node auto-loads the gallery from `/root/.face_recognition/gallery.pkl`. If no gallery exists, an empty enroller is created and can be populated via the enroll topic.
+
+### Run standalone (for development)
+
+```bash
+source /opt/ros/jazzy/setup.bash
+export RMW_IMPLEMENTATION=rmw_zenoh_cpp
+python -m face_recognition.ros_node
+```
+
+---
+
 ## Testing
+
+### Standalone (no ROS2)
 
 ```bash
 cd /path/to/face_recognition
@@ -306,3 +352,31 @@ pixi run python test_demo.py
 ```
 
 Tests detection, enrollment, search (known vs unknown), and pairwise comparison using the InsightFace test images.
+
+### ROS2 integration test
+
+`test_ros_node.py` publishes a static image to the camera topic and prints recognition results. Requires a running face recognition node and Zenoh router.
+
+```bash
+# Search mode — publish test_image.jpg, print recognition results
+python test_ros_node.py search [--wait 5]
+
+# Enroll mode — enroll a person from test_image.jpg, then observe result
+python test_ros_node.py enroll "Alice" [--wait 5]
+```
+
+In Docker:
+
+```bash
+# Start the ROS2 node
+docker compose up -d
+
+# Run the test (separate container, same image)
+docker run --rm --network host \
+  --entrypoint bash \
+  -v .:/app \
+  -e PYTHONPATH=/app \
+  -e RMW_IMPLEMENTATION=rmw_zenoh_cpp \
+  face-recognition:latest \
+  -c 'source /opt/ros/jazzy/setup.bash && python3 /app/test_ros_node.py search --image /app/test_image.jpg --wait 5'
+```
